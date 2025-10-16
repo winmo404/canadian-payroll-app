@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CompanySettings } from '@/lib/calculations/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || '';
-
 export function useCompanySettingsDB() {
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,7 +11,7 @@ export function useCompanySettingsDB() {
 
   const fetchCompanySettings = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/company-settings`);
+      const response = await fetch('/api/company-settings');
       if (response.ok) {
         const data = await response.json();
         setCompanySettings(data);
@@ -27,7 +25,7 @@ export function useCompanySettingsDB() {
 
   const updateCompanySettings = async (newSettings: CompanySettings) => {
     try {
-      const response = await fetch(`${API_BASE}/api/company-settings`, {
+      const response = await fetch('/api/company-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSettings),

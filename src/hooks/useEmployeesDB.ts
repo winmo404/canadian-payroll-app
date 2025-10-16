@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Employee } from '@/hooks/useEmployees';
 
-const API_BASE = process.env.NEXT_PUBLIC_APP_URL || '';
-
 export function useEmployeesDB() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,10 +11,12 @@ export function useEmployeesDB() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/employees`);
+      const response = await fetch('/api/employees');
       if (response.ok) {
         const data = await response.json();
         setEmployees(data);
+      } else {
+        console.error('Failed to fetch employees:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -27,16 +27,23 @@ export function useEmployeesDB() {
 
   const addEmployee = async (employee: Omit<Employee, 'id'>) => {
     try {
-      const response = await fetch(`${API_BASE}/api/employees`, {
+      console.log('Adding employee:', employee);
+      const response = await fetch('/api/employees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(employee),
       });
       
+      console.log('Add employee response:', response.status);
+      
       if (response.ok) {
         const newEmployee = await response.json();
+        console.log('Successfully added employee:', newEmployee);
         setEmployees(prev => [...prev, newEmployee]);
         return newEmployee;
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to add employee:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error adding employee:', error);
@@ -46,7 +53,7 @@ export function useEmployeesDB() {
 
   const updateEmployee = async (id: string, updates: Partial<Employee>) => {
     try {
-      const response = await fetch(`${API_BASE}/api/employees/${id}`, {
+      const response = await fetch(`/api/employees/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -65,7 +72,7 @@ export function useEmployeesDB() {
 
   const deleteEmployee = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/employees/${id}`, {
+      const response = await fetch(`/api/employees/${id}`, {
         method: 'DELETE',
       });
       

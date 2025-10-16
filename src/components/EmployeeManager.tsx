@@ -15,6 +15,8 @@ export default function EmployeeManager() {
 
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
   
   const [newEmployee, setNewEmployee] = useState<Omit<Employee, 'id'>>({
     name: '',
