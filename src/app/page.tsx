@@ -324,10 +324,7 @@ export default function HomePage() {
           )}
 
           {activeTab === 'employees' && (
-            <EmployeeManager 
-              employees={employees}
-              onUpdateEmployees={updateEmployees}
-            />
+            <EmployeeManager />
           )}
 
           {activeTab === 'company-settings' && (

@@ -1,14 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import { useEmployeesDB } from '@/hooks/useEmployeesDB'
 import { Employee } from '@/hooks/useEmployees'
 
-interface EmployeeManagerProps {
-  employees: Employee[]
-  onUpdateEmployees: (employees: Employee[]) => void
-}
-
-export default function EmployeeManager({ employees, onUpdateEmployees }: EmployeeManagerProps) {
+export default function EmployeeManager() {
+  const { 
+    employees, 
+    isLoading, 
+    addEmployee, 
+    updateEmployee, 
+    deleteEmployee 
+  } = useEmployeesDB()
 
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -25,35 +28,38 @@ export default function EmployeeManager({ employees, onUpdateEmployees }: Employ
     startDate: new Date().toISOString().split('T')[0]
   })
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
-    const employee: Employee = {
+    const employee: Omit<Employee, 'id'> = {
       ...newEmployee,
-      id: Date.now().toString()
     }
-    onUpdateEmployees([...employees, employee])
-    setNewEmployee({
-      name: '',
-      hourlyRate: 0,
-      payType: 'hourly',
-      vacationRate: 4.0,
-      federalTD1: 16129,  // 2025 Federal Basic Personal Amount
-      provincialTD1: 12747, // 2025 Ontario Basic Personal Amount
-      wsibRate: 2.15,     // Default WSIB rate 2.15%
-      active: true,
-      startDate: new Date().toISOString().split('T')[0]
-    })
-    setShowAddForm(false)
+    
+    const success = await addEmployee(employee)
+    if (success) {
+      setNewEmployee({
+        name: '',
+        hourlyRate: 0,
+        payType: 'hourly',
+        vacationRate: 4.0,
+        federalTD1: 16129,  // 2025 Federal Basic Personal Amount
+        provincialTD1: 12747, // 2025 Ontario Basic Personal Amount
+        wsibRate: 2.15,     // Default WSIB rate 2.15%
+        active: true,
+        startDate: new Date().toISOString().split('T')[0]
+      })
+      setShowAddForm(false)
+    }
   }
 
-  const handleDeleteEmployee = (id: string) => {
-    onUpdateEmployees(employees.filter(emp => emp.id !== id))
+  const handleDeleteEmployee = async (id: string) => {
+    await deleteEmployee(id)
   }
 
-  const handleToggleActive = (id: string) => {
-    onUpdateEmployees(employees.map(emp => 
-      emp.id === id ? { ...emp, active: !emp.active } : emp
-    ))
+  const handleToggleActive = async (id: string) => {
+    const employee = employees.find(emp => emp.id === id)
+    if (employee) {
+      await updateEmployee(id, { ...employee, active: !employee.active })
+    }
   }
 
   return (
