@@ -1,0 +1,42 @@
+{
+  "name": "canadian-payroll-app",
+  "version": "1.0.0",
+  "description": "Modern Canadian payroll application with accurate 2025 tax calculations",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^6.17.1",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/chokidar": "^1.7.5",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vercel/postgres": "^0.10.0",
+    "autoprefixer": "^10.4.21",
+    "chokidar": "^4.0.3",
+    "eslint": "^9.37.0",
+    "eslint-config-next": "^15.5.5",
+    "next": "^15.5.5",
+    "postcss": "^8.5.6",
+    "prisma": "^6.17.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.9.3"
+  }
+}

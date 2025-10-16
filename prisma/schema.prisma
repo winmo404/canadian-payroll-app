@@ -1,0 +1,143 @@
+// Canadian Payroll Application Database Schema
+// Database-first architecture for cloud deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id            String   @id @default(cuid())
+  name          String
+  addressStreet String
+  addressCity   String
+  addressProvince String
+  postalCode    String
+  phone         String?
+  email         String?
+  website       String?
+  businessNumber String?
+  wsibAccount   String?
+  cppNumber     String?
+  eiNumber      String?
+  
+  // Tax Rate Configuration (stored as JSON for flexibility)
+  taxRates      Json?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  employees     Employee[]
+  payrollRuns   PayrollRun[]
+  
+  @@map("companies")
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  hourlyRate      Float?
+  salary          Float?
+  payType         String   @default("hourly") // hourly, salary
+  vacationRate    Float    @default(4.0)
+  federalTD1      Float    @default(16129)
+  provincialTD1   Float    @default(12747)
+  wsibRate        Float    @default(2.15)
+  active          Boolean  @default(true)
+  startDate       String?
+  
+  // Additional employee details
+  email           String?
+  phone           String?
+  address         String?
+  sin             String?
+  dateOfBirth     DateTime?
+  hireDate        DateTime?
+  jobTitle        String?
+  department      String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payrollEntries  PayrollEntry[]
+  
+  @@map("employees")
+}
+
+model PayrollRun {
+  id              String   @id @default(cuid())
+  companyId       String
+  payPeriodStart  DateTime
+  payPeriodEnd    DateTime
+  payDate         DateTime
+  status          String   @default("draft") // draft, processed, completed
+  totalGrossPay   Float    @default(0)
+  totalNetPay     Float    @default(0)
+  totalTaxes      Float    @default(0)
+  frequency       String   @default("biweekly") // weekly, biweekly, semimonthly, monthly
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payrollEntries  PayrollEntry[]
+  
+  @@map("payroll_runs")
+}
+
+model PayrollEntry {
+  id              String   @id @default(cuid())
+  payrollRunId    String
+  employeeId      String
+  
+  // Payroll calculation results stored as JSON for flexibility
+  calculationData Json
+  
+  // Key summary fields for easy querying
+  grossPay        Float    @default(0)
+  netPay          Float    @default(0)
+  totalTaxes      Float    @default(0)
+  cpp1Emp         Float    @default(0)
+  cpp2Emp         Float    @default(0)
+  eiEmp           Float    @default(0)
+  federalTax      Float    @default(0)
+  provincialTax   Float    @default(0)
+  wsib            Float    @default(0)
+  
+  // YTD tracking
+  ytdGross        Float    @default(0)
+  ytdNet          Float    @default(0)
+  ytdCpp1         Float    @default(0)
+  ytdCpp2         Float    @default(0)
+  ytdEi           Float    @default(0)
+  ytdTax          Float    @default(0)
+  ytdWsib         Float    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  payrollRun      PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employee        Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  @@map("payroll_entries")
+}
+
+// Activity log for tracking changes and audit trail
+model ActivityLog {
+  id          String   @id @default(cuid())
+  companyId   String?
+  action      String   // "employee_created", "payroll_run", "settings_updated", etc.
+  description String
+  metadata    Json?    // Additional data about the action
+  userId      String?  // For future user management
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("activity_logs")
+}
