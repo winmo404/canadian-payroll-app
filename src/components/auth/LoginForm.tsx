@@ -16,25 +16,35 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
   // Stop loading when authentication succeeds
   useEffect(() => {
+    console.log('LoginForm: Auth state changed:', authState)
     if (authState.isAuthenticated) {
+      console.log('LoginForm: Authentication detected, stopping loading')
       setIsLoading(false)
     }
-  }, [authState.isAuthenticated])
+  }, [authState.isAuthenticated, authState])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
+    console.log('LoginForm: Starting login process')
+
     try {
       const result = await login(email, password)
+      console.log('LoginForm: Login result:', result)
+      
       if (!result.success) {
+        console.log('LoginForm: Login failed:', result.error)
         setError(result.error || 'Login failed')
         setIsLoading(false)
+      } else {
+        console.log('LoginForm: Login successful, waiting for auth state change')
+        // On success, keep loading state until AuthWrapper detects authentication
+        // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
       }
-      // On success, keep loading state until AuthWrapper detects authentication
-      // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
     } catch (err) {
+      console.error('LoginForm: Login error:', err)
       setError('An unexpected error occurred')
       setIsLoading(false)
     }

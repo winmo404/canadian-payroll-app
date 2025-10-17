@@ -131,6 +131,7 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
     email: string,
     password: string
   ): Promise<AuthResult> => {
+    console.log('useMultiCompanyAuth: Starting login API call')
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -139,8 +140,11 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
       })
       
       const result = await response.json()
+      console.log('useMultiCompanyAuth: Login API response:', result)
       
       if (result.success) {
+        console.log('useMultiCompanyAuth: Login successful, storing session and updating state')
+        
         // Store session locally for quick access
         localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, JSON.stringify({
           companyId: result.company.id,
@@ -148,11 +152,18 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
         }))
         
         // Update auth state
-        setAuthState({
+        const newAuthState = {
           isAuthenticated: true,
           currentCompany: result.company,
           isLoading: false
-        })
+        }
+        console.log('useMultiCompanyAuth: Setting new auth state:', newAuthState)
+        setAuthState(newAuthState)
+        
+        // Force a slight delay to ensure React processes the state update
+        setTimeout(() => {
+          console.log('useMultiCompanyAuth: State update timeout - current auth state should be updated')
+        }, 10)
       }
       
       return result

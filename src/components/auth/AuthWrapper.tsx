@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMultiCompanyAuth } from '@/hooks/useMultiCompanyAuth'
 import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
@@ -12,8 +12,19 @@ interface AuthWrapperProps {
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   const { authState, logout } = useMultiCompanyAuth()
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [forceRender, setForceRender] = useState(0)
+
+  // Debug logging
+  console.log('AuthWrapper render - authState:', authState)
+  
+  // Force re-render when auth state changes to ensure UI updates
+  useEffect(() => {
+    console.log('AuthWrapper: Auth state effect triggered:', authState)
+    setForceRender(prev => prev + 1)
+  }, [authState.isAuthenticated, authState.isLoading, authState.currentCompany])
 
   if (authState.isLoading) {
+    console.log('AuthWrapper: Showing loading screen')
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -25,12 +36,21 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   }
 
   if (!authState.isAuthenticated) {
-    return authMode === 'login' ? (
-      <LoginForm onSwitchToRegister={() => setAuthMode('register')} />
-    ) : (
-      <RegisterForm onSwitchToLogin={() => setAuthMode('login')} />
+    console.log('AuthWrapper: Showing auth forms, mode:', authMode)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+          {authMode === 'login' ? (
+            <LoginForm onSwitchToRegister={() => setAuthMode('register')} />
+          ) : (
+            <RegisterForm onSwitchToLogin={() => setAuthMode('login')} />
+          )}
+        </div>
+      </div>
     )
   }
+
+  console.log('AuthWrapper: User authenticated, showing main app')
 
   // Render children with company header
   return (
