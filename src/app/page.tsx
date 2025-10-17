@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import AuthWrapper from '@/components/auth/AuthWrapper'
 import PayrollForm from '@/components/PayrollForm'
 import EmployeeManager from '@/components/EmployeeManager'
 import CompanySettingsManager from '@/components/CompanySettingsManager'
@@ -20,19 +21,27 @@ import { PayrollData, EarningsLine } from '@/lib/calculations/types'
 import { calculatePayroll } from '@/lib/calculations/payroll'
 import { exportSinglePayrollRun, generatePayrollSummary } from '@/lib/calculations/export'
 import { calculateEmployeeYTD } from '@/lib/calculations/ytd'
-import { useEmployeesDB } from '@/hooks/useEmployeesDB'
+import { useCompanyEmployees } from '@/hooks/useCompanyEmployees'
 import { usePayrollHistory } from '@/hooks/usePayrollHistory'
 import { useSelectedEmployee } from '@/hooks/useSelectedEmployee'
 import { useAutoFileSystem } from '@/hooks/useAutoFileSystem'
 
 export default function HomePage() {
+  return (
+    <AuthWrapper>
+      <PayrollApp />
+    </AuthWrapper>
+  )
+}
+
+function PayrollApp() {
   const [payrollData, setPayrollData] = useState<PayrollData | null>(null)
   const [activeTab, setActiveTab] = useState('payroll')
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingPayroll, setEditingPayroll] = useState<PayrollData | null>(null)
   
-  // Use database hooks
-  const { employees, isLoading: employeesLoading, fetchEmployees, addEmployee, updateEmployee, deleteEmployee, getEmployeeById, getActiveEmployees } = useEmployeesDB()
+  // Use company-aware employee hooks
+  const { employees, isLoading: employeesLoading, fetchEmployees, addEmployee, updateEmployee, deleteEmployee, getEmployeeById, getActiveEmployees } = useCompanyEmployees()
   
   // Create updateEmployees wrapper for compatibility with existing components
   const updateEmployees = async (newEmployees: any[]) => {
