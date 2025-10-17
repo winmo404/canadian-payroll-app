@@ -1,24 +1,21 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { hashPassword, verifyPassword } from '../lib/auth/crypto'
-import { validateEmail, validatePassword } from '../lib/auth/validation'
-import {
-  CompanyData,
-  AuthResult,
-  getAllCompanies,
-  saveCompany,
-  findCompanyByEmail,
-  findCompanyById,
-  generateCompanyId,
-  saveSession,
-  getCurrentSession,
-  clearSession,
-  validateSession,
-  saveCompanyData,
-  loadCompanyData,
-  clearCompanyData
-} from '../lib/auth/storage'
+
+export interface CompanyData {
+  id: string
+  name: string
+  email: string
+  sessionToken?: string
+  sessionExpiry?: string | Date
+  createdAt?: string | Date
+}
+
+export interface AuthResult {
+  success: boolean
+  error?: string
+  company?: CompanyData
+}
 
 export interface AuthState {
   isAuthenticated: boolean
@@ -38,6 +35,10 @@ export interface UseMultiCompanyAuthReturn {
   loadCompanySettings: () => any
 }
 
+const STORAGE_KEYS = {
+  CURRENT_SESSION: 'current_session'
+} as const
+
 export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -46,23 +47,36 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
   })
 
   // Check for existing session on hook initialization
-  const initializeAuth = useCallback(() => {
-    const session = getCurrentSession()
-    
-    if (session) {
-      const company = findCompanyById(session.companyId)
+  const initializeAuth = useCallback(async () => {
+    try {
+      const storedSession = localStorage.getItem(STORAGE_KEYS.CURRENT_SESSION)
       
-      if (company && validateSession(session.companyId, session.sessionToken)) {
-        setAuthState({
-          isAuthenticated: true,
-          currentCompany: company,
-          isLoading: false
+      if (storedSession) {
+        const { companyId, sessionToken } = JSON.parse(storedSession)
+        
+        // Validate session with database
+        const response = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId, sessionToken })
         })
-        return
+        
+        if (response.ok) {
+          const { company } = await response.json()
+          setAuthState({
+            isAuthenticated: true,
+            currentCompany: company,
+            isLoading: false
+          })
+          return
+        }
       }
+    } catch (error) {
+      console.error('Session initialization error:', error)
     }
     
     // No valid session found
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION)
     setAuthState({
       isAuthenticated: false,
       currentCompany: null,
@@ -82,54 +96,30 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
     password: string
   ): Promise<AuthResult> => {
     try {
-      // Validate inputs
-      if (!companyName.trim()) {
-        return { success: false, error: 'Company name is required' }
-      }
-      
-      if (!validateEmail(email)) {
-        return { success: false, error: 'Please enter a valid email address' }
-      }
-      
-      const passwordValidation = validatePassword(password)
-      if (!passwordValidation.isValid) {
-        return { success: false, error: passwordValidation.errors.join(', ') }
-      }
-
-      // Check if company already exists
-      const existingCompany = findCompanyByEmail(email)
-      if (existingCompany) {
-        return { success: false, error: 'A company is already registered with this email address' }
-      }
-
-      // Hash password
-      const { hash, salt } = await hashPassword(password)
-
-      // Create new company
-      const newCompany: CompanyData = {
-        id: generateCompanyId(),
-        companyName: companyName.trim(),
-        email: email.toLowerCase().trim(),
-        passwordHash: hash,
-        passwordSalt: salt,
-        createdAt: Date.now()
-      }
-
-      // Save company
-      saveCompany(newCompany)
-
-      // Create session
-      const sessionToken = crypto.randomUUID()
-      saveSession(newCompany, sessionToken)
-
-      // Update auth state
-      setAuthState({
-        isAuthenticated: true,
-        currentCompany: newCompany,
-        isLoading: false
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName, email, password })
       })
-
-      return { success: true, company: newCompany }
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Store session locally for quick access
+        localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, JSON.stringify({
+          companyId: result.company.id,
+          sessionToken: result.company.sessionToken
+        }))
+        
+        // Update auth state
+        setAuthState({
+          isAuthenticated: true,
+          currentCompany: result.company,
+          isLoading: false
+        })
+      }
+      
+      return result
     } catch (error) {
       console.error('Registration error:', error)
       return { success: false, error: 'Registration failed. Please try again.' }
@@ -142,39 +132,30 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
     password: string
   ): Promise<AuthResult> => {
     try {
-      // Validate inputs
-      if (!validateEmail(email)) {
-        return { success: false, error: 'Please enter a valid email address' }
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Store session locally for quick access
+        localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, JSON.stringify({
+          companyId: result.company.id,
+          sessionToken: result.company.sessionToken
+        }))
+        
+        // Update auth state
+        setAuthState({
+          isAuthenticated: true,
+          currentCompany: result.company,
+          isLoading: false
+        })
       }
       
-      if (!password) {
-        return { success: false, error: 'Password is required' }
-      }
-
-      // Find company
-      const company = findCompanyByEmail(email)
-      if (!company) {
-        return { success: false, error: 'Invalid email or password' }
-      }
-
-      // Verify password
-      const isValid = await verifyPassword(password, company.passwordHash, company.passwordSalt)
-      if (!isValid) {
-        return { success: false, error: 'Invalid email or password' }
-      }
-
-      // Create new session
-      const sessionToken = crypto.randomUUID()
-      saveSession(company, sessionToken)
-
-      // Update auth state
-      setAuthState({
-        isAuthenticated: true,
-        currentCompany: company,
-        isLoading: false
-      })
-
-      return { success: true, company }
+      return result
     } catch (error) {
       console.error('Login error:', error)
       return { success: false, error: 'Login failed. Please try again.' }
@@ -182,62 +163,65 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
   }, [])
 
   // Logout
-  const logout = useCallback(() => {
-    clearSession()
-    setAuthState({
-      isAuthenticated: false,
-      currentCompany: null,
-      isLoading: false
-    })
-  }, [])
+  const logout = useCallback(async () => {
+    try {
+      if (authState.currentCompany) {
+        // Clear session from database
+        await fetch('/api/auth/session', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId: authState.currentCompany.id })
+        })
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear local session regardless of API call result
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION)
+      setAuthState({
+        isAuthenticated: false,
+        currentCompany: null,
+        isLoading: false
+      })
+    }
+  }, [authState.currentCompany])
 
   // Check current session
   const checkSession = useCallback((): boolean => {
-    const session = getCurrentSession()
-    
-    if (!session) return false
-    
-    const company = findCompanyById(session.companyId)
-    if (!company) return false
-    
-    const isValid = validateSession(session.companyId, session.sessionToken)
-    
-    if (!isValid) {
-      logout()
-      return false
-    }
-    
-    return true
-  }, [logout])
+    return authState.isAuthenticated && authState.currentCompany !== null
+  }, [authState.isAuthenticated, authState.currentCompany])
 
-  // Company-specific data management
-  const saveEmployeeData = useCallback((employees: any[]) => {
-    if (!authState.currentCompany) {
-      throw new Error('No company authenticated')
-    }
-    saveCompanyData(authState.currentCompany.id, 'employees', employees)
+  // Company-specific data management (keeping localStorage for performance)
+  const getCompanyStorageKey = useCallback((dataType: string): string => {
+    if (!authState.currentCompany) return ''
+    return `company_${authState.currentCompany.id}_${dataType}`
   }, [authState.currentCompany])
+
+  const saveEmployeeData = useCallback((employees: any[]) => {
+    if (!authState.currentCompany) return
+    const key = getCompanyStorageKey('employees')
+    localStorage.setItem(key, JSON.stringify(employees))
+  }, [authState.currentCompany, getCompanyStorageKey])
 
   const loadEmployeeData = useCallback((): any[] => {
-    if (!authState.currentCompany) {
-      return []
-    }
-    return loadCompanyData(authState.currentCompany.id, 'employees', [])
-  }, [authState.currentCompany])
+    if (!authState.currentCompany) return []
+    const key = getCompanyStorageKey('employees')
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : []
+  }, [authState.currentCompany, getCompanyStorageKey])
 
   const saveCompanySettings = useCallback((settings: any) => {
-    if (!authState.currentCompany) {
-      throw new Error('No company authenticated')
-    }
-    saveCompanyData(authState.currentCompany.id, 'settings', settings)
-  }, [authState.currentCompany])
+    if (!authState.currentCompany) return
+    const key = getCompanyStorageKey('settings')
+    localStorage.setItem(key, JSON.stringify(settings))
+  }, [authState.currentCompany, getCompanyStorageKey])
 
   const loadCompanySettings = useCallback((): any => {
-    if (!authState.currentCompany) {
-      return {}
-    }
-    return loadCompanyData(authState.currentCompany.id, 'settings', {})
-  }, [authState.currentCompany])
+    if (!authState.currentCompany) return {}
+    const key = getCompanyStorageKey('settings')
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : {}
+  }, [authState.currentCompany, getCompanyStorageKey])
 
   return {
     authState,

@@ -41,7 +41,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">
-                {authState.currentCompany?.companyName || 'Canadian Payroll'}
+                {authState.currentCompany?.name || 'Canadian Payroll'}
               </h1>
               <span className="ml-2 text-sm text-gray-500">
                 ({authState.currentCompany?.email})

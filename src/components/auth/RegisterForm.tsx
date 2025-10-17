@@ -51,11 +51,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setIsLoading(true)
 
     try {
-      const result = await register({
-        companyName: formData.companyName,
-        email: formData.email,
-        password: formData.password
-      })
+      const result = await register(
+        formData.companyName,
+        formData.email,
+        formData.password
+      )
 
       if (!result.success) {
         setError(result.error || 'Registration failed')

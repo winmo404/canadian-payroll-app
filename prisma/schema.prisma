@@ -18,12 +18,18 @@ model Company {
   addressProvince String
   postalCode    String
   phone         String?
-  email         String?
+  email         String   @unique  // Required for authentication
   website       String?
   businessNumber String?
   wsibAccount   String?
   cppNumber     String?
   eiNumber      String?
+  
+  // Authentication fields
+  passwordHash  String?  // PBKDF2 hash (optional for migration)
+  passwordSalt  String?  // Salt for password hashing (optional for migration)
+  sessionToken  String?  // Current session token
+  sessionExpiry DateTime? // Session expiration time
   
   // Tax Rate Configuration (stored as JSON for flexibility)
   taxRates      Json?
