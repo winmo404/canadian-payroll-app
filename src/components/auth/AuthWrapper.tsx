@@ -12,16 +12,9 @@ interface AuthWrapperProps {
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   const { authState, logout } = useMultiCompanyAuth()
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
-  const [renderKey, setRenderKey] = useState(0)
 
   // Debug logging
-  console.log('AuthWrapper render - authState:', authState, 'renderKey:', renderKey)
-  
-  // Force re-render when auth state changes to ensure UI updates immediately
-  useEffect(() => {
-    console.log('AuthWrapper: Auth state effect triggered:', authState)
-    setRenderKey(prev => prev + 1)
-  }, [authState.isAuthenticated, authState.isLoading])
+  console.log('AuthWrapper render - authState:', authState)
 
   if (authState.isLoading) {
     console.log('AuthWrapper: Showing loading screen')
@@ -38,7 +31,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   if (!authState.isAuthenticated) {
     console.log('AuthWrapper: Showing auth forms, mode:', authMode)
     return (
-      <div key={`auth-${renderKey}`} className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
           {authMode === 'login' ? (
             <LoginForm onSwitchToRegister={() => setAuthMode('register')} />
@@ -54,7 +47,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
 
   // Render children with company header
   return (
-    <div key={`app-${renderKey}-${authState.currentCompany?.id}`} className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Company Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -113,21 +113,12 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
           sessionToken: result.company.sessionToken
         }))
         
-        // Update auth state using functional update
-        setAuthState(prevState => {
-          const newState = {
-            isAuthenticated: true,
-            currentCompany: result.company,
-            isLoading: false
-          }
-          console.log('useMultiCompanyAuth: Registration state update - prev:', prevState, 'new:', newState)
-          return newState
+        // Update auth state
+        setAuthState({
+          isAuthenticated: true,
+          currentCompany: result.company,
+          isLoading: false
         })
-        
-        // Force additional update
-        setTimeout(() => {
-          setAuthState(current => ({ ...current }))
-        }, 0)
       }
       
       return result
@@ -162,22 +153,12 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
           sessionToken: result.company.sessionToken
         }))
         
-        // Update auth state using functional update to ensure it triggers re-render
-        setAuthState(prevState => {
-          const newState = {
-            isAuthenticated: true,
-            currentCompany: result.company,
-            isLoading: false
-          }
-          console.log('useMultiCompanyAuth: State update - prev:', prevState, 'new:', newState)
-          return newState
+        // Update auth state
+        setAuthState({
+          isAuthenticated: true,
+          currentCompany: result.company,
+          isLoading: false
         })
-        
-        // Additional force update to ensure UI responds
-        setTimeout(() => {
-          console.log('useMultiCompanyAuth: Timeout - forcing additional state update')
-          setAuthState(current => ({ ...current }))
-        }, 0)
       }
       
       return result
