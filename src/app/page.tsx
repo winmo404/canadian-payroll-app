@@ -6,7 +6,6 @@ import EmployeeManager from '@/components/EmployeeManager'
 import CompanySettingsManager from '@/components/CompanySettingsManager'
 import PayrollHistory from '@/components/PayrollHistory'
 import { PayrollEditModal } from '@/components/PayrollEditModal'
-import StorageManager from '@/components/StorageManager'
 import { YTDDebug } from '@/components/YTDDebug'
 import { TaxComparison } from '@/components/TaxComparison'
 import { TD1Migration } from '@/components/TD1Migration'
@@ -220,9 +219,6 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Storage Status */}
-      <StorageManager />
-
       {/* TD1 Migration Notice */}
       <TD1Migration 
         employees={employees}
