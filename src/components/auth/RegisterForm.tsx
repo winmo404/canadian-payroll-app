@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMultiCompanyAuth } from '@/hooks/useMultiCompanyAuth'
 import { validatePassword } from '@/lib/auth/validation'
 
@@ -9,7 +9,7 @@ interface RegisterFormProps {
 }
 
 export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
-  const { register } = useMultiCompanyAuth()
+  const { register, authState } = useMultiCompanyAuth()
   const [formData, setFormData] = useState({
     companyName: '',
     email: '',
@@ -18,6 +18,13 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Stop loading when authentication succeeds
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      setIsLoading(false)
+    }
+  }, [authState.isAuthenticated])
   const [passwordValidation, setPasswordValidation] = useState<string[]>([])
 
   const handleInputChange = (field: string, value: string) => {
@@ -59,10 +66,12 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
       if (!result.success) {
         setError(result.error || 'Registration failed')
+        setIsLoading(false)
       }
+      // On success, keep loading state until AuthWrapper detects authentication
+      // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
     } catch (err) {
       setError('An unexpected error occurred')
-    } finally {
       setIsLoading(false)
     }
   }

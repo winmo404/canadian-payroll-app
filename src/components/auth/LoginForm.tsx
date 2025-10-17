@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMultiCompanyAuth } from '@/hooks/useMultiCompanyAuth'
 
 interface LoginFormProps {
@@ -8,11 +8,18 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
-  const { login } = useMultiCompanyAuth()
+  const { login, authState } = useMultiCompanyAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Stop loading when authentication succeeds
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      setIsLoading(false)
+    }
+  }, [authState.isAuthenticated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,10 +30,12 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       const result = await login(email, password)
       if (!result.success) {
         setError(result.error || 'Login failed')
+        setIsLoading(false)
       }
+      // On success, keep loading state until AuthWrapper detects authentication
+      // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
     } catch (err) {
       setError('An unexpected error occurred')
-    } finally {
       setIsLoading(false)
     }
   }
