@@ -105,18 +105,29 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
       const result = await response.json()
       
       if (result.success) {
+        console.log('useMultiCompanyAuth: Registration successful, updating state')
+        
         // Store session locally for quick access
         localStorage.setItem(STORAGE_KEYS.CURRENT_SESSION, JSON.stringify({
           companyId: result.company.id,
           sessionToken: result.company.sessionToken
         }))
         
-        // Update auth state
-        setAuthState({
-          isAuthenticated: true,
-          currentCompany: result.company,
-          isLoading: false
+        // Update auth state using functional update
+        setAuthState(prevState => {
+          const newState = {
+            isAuthenticated: true,
+            currentCompany: result.company,
+            isLoading: false
+          }
+          console.log('useMultiCompanyAuth: Registration state update - prev:', prevState, 'new:', newState)
+          return newState
         })
+        
+        // Force additional update
+        setTimeout(() => {
+          setAuthState(current => ({ ...current }))
+        }, 0)
       }
       
       return result
@@ -151,19 +162,22 @@ export function useMultiCompanyAuth(): UseMultiCompanyAuthReturn {
           sessionToken: result.company.sessionToken
         }))
         
-        // Update auth state
-        const newAuthState = {
-          isAuthenticated: true,
-          currentCompany: result.company,
-          isLoading: false
-        }
-        console.log('useMultiCompanyAuth: Setting new auth state:', newAuthState)
-        setAuthState(newAuthState)
+        // Update auth state using functional update to ensure it triggers re-render
+        setAuthState(prevState => {
+          const newState = {
+            isAuthenticated: true,
+            currentCompany: result.company,
+            isLoading: false
+          }
+          console.log('useMultiCompanyAuth: State update - prev:', prevState, 'new:', newState)
+          return newState
+        })
         
-        // Force a slight delay to ensure React processes the state update
+        // Additional force update to ensure UI responds
         setTimeout(() => {
-          console.log('useMultiCompanyAuth: State update timeout - current auth state should be updated')
-        }, 10)
+          console.log('useMultiCompanyAuth: Timeout - forcing additional state update')
+          setAuthState(current => ({ ...current }))
+        }, 0)
       }
       
       return result

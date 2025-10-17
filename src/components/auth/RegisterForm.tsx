@@ -67,9 +67,18 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       if (!result.success) {
         setError(result.error || 'Registration failed')
         setIsLoading(false)
+      } else {
+        // On success, keep loading state until AuthWrapper detects authentication
+        // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
+        
+        // Force page refresh as fallback if state doesn't update UI
+        setTimeout(() => {
+          if (!authState.isAuthenticated) {
+            console.log('RegisterForm: State not updated after 2 seconds, forcing page refresh')
+            window.location.reload()
+          }
+        }, 2000)
       }
-      // On success, keep loading state until AuthWrapper detects authentication
-      // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
     } catch (err) {
       setError('An unexpected error occurred')
       setIsLoading(false)

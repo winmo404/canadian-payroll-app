@@ -42,6 +42,14 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         console.log('LoginForm: Login successful, waiting for auth state change')
         // On success, keep loading state until AuthWrapper detects authentication
         // The AuthWrapper will automatically redirect when authState.isAuthenticated becomes true
+        
+        // Force page refresh as fallback if state doesn't update UI
+        setTimeout(() => {
+          if (!authState.isAuthenticated) {
+            console.log('LoginForm: State not updated after 2 seconds, forcing page refresh')
+            window.location.reload()
+          }
+        }, 2000)
       }
     } catch (err) {
       console.error('LoginForm: Login error:', err)
