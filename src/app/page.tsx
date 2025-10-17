@@ -15,7 +15,6 @@ import DataRecovery from '@/components/DataRecovery'
 import ProfessionalPaystub from '@/components/ProfessionalPaystub'
 import PaystubExport from '@/components/PaystubExport'
 import FileStorageManager from '@/components/FileStorageManager'
-import { AutoFileSystemManager } from '@/components/AutoFileSystemManager'
 import { DataSyncManager } from '@/components/DataSyncManager'
 import { PayrollData, EarningsLine } from '@/lib/calculations/types'
 import { calculatePayroll } from '@/lib/calculations/payroll'
@@ -24,7 +23,6 @@ import { calculateEmployeeYTD } from '@/lib/calculations/ytd'
 import { useCompanyEmployees } from '@/hooks/useCompanyEmployees'
 import { usePayrollHistory } from '@/hooks/usePayrollHistory'
 import { useSelectedEmployee } from '@/hooks/useSelectedEmployee'
-import { useAutoFileSystem } from '@/hooks/useAutoFileSystem'
 
 export default function HomePage() {
   return (
@@ -51,7 +49,6 @@ function PayrollApp() {
   }
   const { payrollHistory, addPayrollRun, clearHistory } = usePayrollHistory()
   const { selectedEmployeeId, setSelectedEmployeeId } = useSelectedEmployee('1')
-  const { autoSavePaystub } = useAutoFileSystem()
 
   // Auto-select first employee if none is selected and employees are available
   useEffect(() => {
@@ -209,13 +206,7 @@ function PayrollApp() {
     // Add to history using persistent hook
     addPayrollRun(newPayrollData)
     
-    // Automatically save paystub to local hard drive
-    try {
-      autoSavePaystub(newPayrollData)
-      console.log('✅ Paystub automatically saved to local drive')
-    } catch (error) {
-      console.error('Failed to auto-save paystub:', error)
-    }
+    console.log('✅ Payroll data saved to database')
   }
 
   const tabs = [
@@ -379,14 +370,6 @@ function PayrollApp() {
 
           {activeTab === 'file-storage' && (
             <FileStorageManager />
-          )}
-
-          {activeTab === 'auto-file-system' && (
-            <AutoFileSystemManager 
-              employees={employees}
-              payrollHistory={payrollHistory}
-              onDataLoaded={handleDataUpdate}
-            />
           )}
 
           {activeTab === 'data-sync' && (
